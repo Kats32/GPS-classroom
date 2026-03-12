@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gps-service
+  labels:
+    app: gps-service
+spec:
+  replicas: 1                         # Number of pod instances to run
+  selector:
+    matchLabels:
+      app: gps-service
+  template:
+    metadata:
+      labels:
+        app: gps-service
+      annotations:
+        prometheus.io/scrape: "true"  # Tell Prometheus to scrape this pod
+        prometheus.io/port: "5000"    # Port where /metrics is exposed
+    spec:
+      containers:
+      - name: gps-service
+        image: gps-service:latest
+        imagePullPolicy: Never        # Use local Minikube image, don't pull from Docker Hub
+        ports:
+        - containerPort: 5000
+        livenessProbe:                # Kubernetes will restart pod if this fails
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:               # Pod won't receive traffic until this passes
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 3
+          periodSeconds: 5
